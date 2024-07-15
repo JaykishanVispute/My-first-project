@@ -1,0 +1,562 @@
+import pandas as pd
+
+# Load your dataset
+df = pd.read_csv('ecommerceDataset.csv', header = None, names = ['category', 'description'])
+# Display the first few rows of the DataFrame
+
+
+
+
+
+pip install fasttext
+
+
+# Import dependencies
+
+import numpy as np
+import pandas as pd 
+import matplotlib.pyplot as plt
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torch.utils.data import Dataset, DataLoader
+from transformers import BertForSequenceClassification
+from transformers import BertModel
+from transformers import get_linear_schedule_with_warmup
+from tqdm import tqdm
+
+!pip install torch torchvision torchaudio
+
+
+
+
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+nltk.download('stopwords')
+nltk.download('punkt')
+nltk.download('wordnet')
+
+
+
+
+import numpy as np
+np.set_printoptions(edgeitems=30, linewidth=100000, 
+    formatter=dict(float=lambda x: "%.3g" % df))
+
+
+
+df =pd.read_csv('ecommerceDataset.csv',names=["category","description "], header = None)
+print(df.shape)
+df.head(3)
+
+df.columns = df.columns.str.strip()
+
+
+df.category.value_counts()   # dataset in not havyly inbalance 
+
+df.dropna(inplace= True)
+df.shape
+
+df.category.replace('Clothing & Accessories', 'Clothing_Accessories', inplace=True)
+df.category.unique()
+
+
+import pandas as pd
+
+# Assuming df is your DataFrame containing the e-commerce dataset
+# Load your dataset
+df = pd.read_csv('ecommerceDataset.csv', header=None, names=['category', 'description'])
+
+# Dataframe Summary
+def dataframe_summary(dataframe):
+    """
+    Generates a summary DataFrame containing information about null values, number of unique values,
+    and duplicated rows for each column in the input DataFrame.
+
+    Parameters:
+    dataframe (pandas DataFrame): The DataFrame to be summarized.
+
+    Returns:
+    pandas DataFrame: A summary DataFrame containing information about null values, number of unique values,
+    and duplicated rows for each column in the input DataFrame.
+    """
+
+    null_counts = dataframe.isnull().sum()
+    unique_counts = dataframe.nunique()
+    duplicated_counts = dataframe.duplicated().sum()
+
+    summary_df = pd.DataFrame({
+        'Null_Values': null_counts,
+        'Unique_Values': unique_counts,
+        'Duplicated_Rows': duplicated_counts
+    })
+
+    return summary_df
+
+# Generate and display the summary DataFrame
+summary = dataframe_summary(df)
+print(summary)
+
+
+
+
+# Dropping Null Values
+df.dropna(axis = 0, inplace = True)
+
+df.isnull().sum()
+
+# Distribution Plot for df['category']
+import plotly.express as px
+
+fig = px.histogram(df, x='category', title='Category Distribution', 
+                   width=500, height=500)
+
+fig.update_layout(
+    xaxis_title='Category',
+    yaxis_title='Count',
+    bargap=0.25,
+    xaxis_tickangle=-45,
+    xaxis_tickfont_size=10,
+    yaxis_tickfont_size=10
+)
+
+fig.show()
+
+import pandas as pd
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from transformers import BertTokenizer
+import nltk
+
+# Download NLTK data
+nltk.download('stopwords')
+nltk.download('punkt')
+
+# Load your dataset
+df = pd.read_csv('ecommerceDataset.csv', header=None, names=['category', 'description'])
+
+# Initialize the BERT tokenizer
+tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+
+# Set stopwords for English
+stop_words = set(stopwords.words('english'))
+
+def tokenize(sentence):
+    # Check if the input is not a string or is NaN
+    if not isinstance(sentence, str):
+        return None, None
+    
+    # Tokenize the sentence using NLTK's word_tokenize
+    word_tokens = word_tokenize(sentence)
+    
+    # Remove stop words
+    filtered_sentence = [word for word in word_tokens if word.lower() not in stop_words]
+    filtered_sentence = ' '.join(filtered_sentence)
+    
+    # Tokenize the filtered sentence using BERT tokenizer
+    tokens = tokenizer.encode_plus(
+        filtered_sentence,
+        add_special_tokens=True,
+        max_length=512,
+        padding='max_length',
+        truncation=True,
+        return_token_type_ids=False,
+        return_tensors='pt'
+    )
+    
+    return tokens['input_ids'].squeeze().tolist(), tokens['attention_mask'].squeeze().tolist()
+
+# Apply tokenization to each description in your DataFrame
+tokenized = df['description'].apply(tokenize)
+df['input_ids'], df['attention_mask'] = zip(*tokenized)
+
+# Drop rows where tokenization returned None
+df.dropna(subset=['input_ids', 'attention_mask'], inplace=True)
+
+# Display the updated DataFrame with tokenized input IDs and attention masks
+print(df[['description', 'input_ids', 'attention_mask']].head())
+
+# Save the updated DataFrame
+df.to_csv('tokenized_dataset.csv', index=False)
+
+
+
+
+
+
+
+
+import pandas as pd
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize  # Import word_tokenize from NLTK
+from transformers import BertTokenizer
+
+# Initialize the BERT tokenizer
+tokenizer = BertTokenizer.from_pretrained('bert-base-cased')
+
+# Set stopwords for English
+stop_words = set(stopwords.words('english'))
+
+def tokenize(sentence):
+    # Remove stop words and tokenize using NLTK's word_tokenize
+    word_tokens = word_tokenize(sentence)
+    filtered_sentence = [word for word in word_tokens if word.lower() not in stop_words]
+    filtered_sentence = ' '.join(filtered_sentence)
+    
+    # Tokenize the filtered sentence using BERT tokenizer
+    tokens = tokenizer.encode_plus(
+        filtered_sentence,
+        add_special_tokens=True,
+        max_length=512,
+        padding='max_length',
+        truncation=True,
+        return_token_type_ids=False,
+        return_tensors='pt'
+    )
+    
+    return tokens['input_ids'].squeeze(), tokens['attention_mask'].squeeze()
+
+# Assuming 'df' is your DataFrame with 'description' column
+df['input_ids'], df['attention_mask'] = zip(*df['description'].apply(tokenize))
+
+
+## Data Cleaning And Preprocessing
+import re
+import nltk
+nltk.download('stopwords')
+
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+wordlemmatize=WordNetLemmatizer()
+
+
+
+
+
+
+
+
+
+df.head()
+
+X = df['description']
+y = df['category']
+len(X)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pipeMNB.fit(X_train, y_train)
+predictMNB = pipeMNB.predict(X_test)
+accuracy_score(y_test, predictMNB)
+
+
+
+
+
+
+
+df['category_description'] = df['category_description'].map(preprocess)
+
+df.head(4)
+
+
+from sklearn.model_selection import train_test_split
+
+train, test = train_test_split(df, test_size= 0.2)
+
+train.shape, test.shape
+
+
+
+import numpy as np
+np.set_printoptions(edgeitems=30, linewidth=100000, 
+    formatter=dict(float=lambda x: "%.3g" % x))
+
+X
+
+
+
+
+
+
+
+
+import pandas as pd
+import re
+from sklearn.model_selection import train_test_split
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import classification_report, accuracy_score
+from sklearn.preprocessing import LabelEncoder
+
+# Load the data
+df = pd.read_csv('ecommerceDataset.csv')
+
+# Display the column names
+print("Column names:", df.columns)
+
+# Check if 'description' and 'category' columns exist
+if 'description' not in df.columns:
+    print("The 'description' column does not exist in the data.")
+else:
+    # Clean the text
+    def clean_text(text):
+        text = re.sub(r'[^\w\s]', ' ', text)  # Remove punctuation
+        text = re.sub(r'\s+', ' ', text)  # Remove extra whitespace
+        text = text.strip()  # Remove leading and trailing whitespace
+        return text
+
+    df['cleaned_description'] = df['description'].apply(clean_text)
+
+    # Display the first few rows to verify
+    print(df[['description', 'cleaned_description']].head())
+
+# Encode the labels
+if 'category' not in df.columns:
+    print("The 'category' column does not exist in the data.")
+else:
+    label_encoder = LabelEncoder()
+    df['category_encoded'] = label_encoder.fit_transform(df['category'])
+
+    # Display the first few rows to verify
+    print(df[['category', 'category_encoded']].head())
+
+# Split the data into training and testing sets
+if 'cleaned_description' in df.columns and 'category_encoded' in df.columns:
+    X = df['cleaned_description']
+    y = df['category_encoded']
+
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=22)
+
+    print(f"Training set size: {len(X_train)}")
+    print(f"Test set size: {len(X_test)}")
+
+    # Vectorize the text data if columns exist
+    if 'cleaned_description' in df.columns:
+        vectorizer = TfidfVectorizer()
+        X_train_tfidf = vectorizer.fit_transform(X_train)
+        X_test_tfidf = vectorizer.transform(X_test)
+    else:
+        print("The 'cleaned_description' column does not exist for vectorization.")
+        X_train_tfidf = None
+        X_test_tfidf = None
+
+    # Train the classifier if data is available
+    if X_train_tfidf is not None and y_train.shape[0] > 0:
+        classifier = LogisticRegression()
+        classifier.fit(X_train_tfidf, y_train)
+
+        # Evaluate the model if test data is available
+        if X_test_tfidf is not None and y_test.shape[0] > 0:
+            y_pred = classifier.predict(X_test_tfidf)
+
+            print("Classification Report:")
+            print(classification_report(y_test, y_pred))
+
+            print("Accuracy Score:")
+            print(accuracy_score(y_test, y_pred))
+        else:
+            print("Test data is not available for evaluation.")
+    else:
+        print("Training data is not available for training the classifier.")
+else:
+    print("Required columns for splitting data do not exist.")
+
+
+print(X)
+
+print(y)
+
+
+
+
+
+PipeMNB = Pipeline([
+    ('tfidf', TfidfVectorizer()),
+    ('classifier', MultinomialNB())
+])
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=22)
+
+
+
+
+
+
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.naive_bayes import MultinomialNB, ComplementNB
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, classification_report
+
+# Assuming X and y are defined and ready to be split
+
+# Reduce the size of the dataset for demonstration purposes
+X_small, _, y_small, _ = train_test_split(X, y, test_size=0.8, random_state=22)
+
+X_train, X_test, y_train, y_test = train_test_split(X_small, y_small, test_size=0.2, random_state=22)
+
+# Length of the training set
+print(f"Length of X_train: {len(X_train)}")
+
+# Optimize TfidfVectorizer by limiting the number of features
+tfidf_vectorizer = TfidfVectorizer(max_features=10000)
+
+# Define the pipelines
+pipeMNB = Pipeline([('tfidf', tfidf_vectorizer), ('clf', MultinomialNB())])
+pipeCNB = Pipeline([('tfidf', tfidf_vectorizer), ('clf', ComplementNB())])
+pipeSVC = Pipeline([('tfidf', tfidf_vectorizer), ('clf', SVC())])
+
+# Fit and evaluate the MultinomialNB pipeline
+pipeMNB.fit(X_train, y_train)
+predictMNB = pipeMNB.predict(X_test)
+print(f"MultinomialNB Accuracy: {accuracy_score(y_test, predictMNB)}")
+print(f"MultinomialNB Classification Report:\n {classification_report(y_test, predictMNB)}")
+
+# Fit and evaluate the ComplementNB pipeline
+pipeCNB.fit(X_train, y_train)
+predictCNB = pipeCNB.predict(X_test)
+print(f"ComplementNB Accuracy: {accuracy_score(y_test, predictCNB)}")
+print(f"ComplementNB Classification Report:\n {classification_report(y_test, predictCNB)}")
+
+# Fit and evaluate the SVC pipeline
+pipeSVC.fit(X_train, y_train)
+predictSVC = pipeSVC.predict(X_test)
+print(f"SVC Accuracy: {accuracy_score(y_test, predictSVC)}")
+print(f"SVC Classification Report:\n {classification_report(y_test, predictSVC)}")
+
+
+from sklearn.model_selection import train_test_split
+
+X = df['description']
+y = df['category']
+
+# Split the dataset into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+
+from sklearn.feature_extraction.text import CountVectorizer
+
+# Initialize the CountVectorizer
+vectorizer = CountVectorizer()
+
+# Fit and transform the training data
+X_train_bow = vectorizer.fit_transform(X_train)
+
+# Transform the testing data
+X_test_bow = vectorizer.transform(X_test)
+
+
+from sklearn.linear_model import LogisticRegression
+
+# Initialize the classifier
+classifier = LogisticRegression()
+
+# Train the classifier
+classifier.fit(X_train_bow, y_train)
+
+
+from sklearn.metrics import classification_report, accuracy_score
+
+# Predict on the test data
+y_pred = classifier.predict(X_test_bow)
+
+# Print the accuracy and classification report
+accuracy = accuracy_score(y_test, y_pred)
+report = classification_report(y_test, y_pred)
+
+print(f'Accuracy: {accuracy}')
+print('Classification Report:')
+print(report)
+
+
+from sklearn.feature_extraction.text import CountVectorizer
+
+# Initialize the CountVectorizer with n-grams
+vectorizer = CountVectorizer(ngram_range=(1, 2))  # (1, 2) means unigrams and bigrams
+
+# Fit and transform the training data
+X_train_ngram = vectorizer.fit_transform(X_train)
+
+# Transform the testing data
+X_test_ngram = vectorizer.transform(X_test)
+
+
+from sklearn.linear_model import LogisticRegression
+
+# Initialize the classifier
+classifier = LogisticRegression()
+
+# Train the classifier
+classifier.fit(X_train_ngram, y_train)
+
+
+from sklearn.metrics import classification_report, accuracy_score
+
+# Predict on the test data
+y_pred = classifier.predict(X_test_ngram)
+
+# Print the accuracy and classification report
+accuracy = accuracy_score(y_test, y_pred)
+report = classification_report(y_test, y_pred)
+
+print(f'Accuracy: {accuracy}')
+print('Classification Report:')
+print(report)
+
+
+# Define the models
+models = {
+    'Logistic Regression': LogisticRegression(max_iter=1000),
+    'MultinomialNB': MultinomialNB(),
+    'ComplementNB': ComplementNB(),
+    'SVC': SVC()
+}
+
+# Train and evaluate the models
+for name, model in models.items():
+    model.fit(X_train_tfidf, y_train)
+    y_pred = model.predict(X_test_tfidf)
+    
+    accuracy = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred, average='weighted')
+    recall = recall_score(y_test, y_pred, average='weighted')
+    f1 = f1_score(y_test, y_pred, average='weighted')
+    
+    print(f"{name} Model Performance:")
+    print(f"Accuracy: {accuracy:.4f}")
+    print(f"Precision: {precision:.4f}")
+    print(f"Recall: {recall:.4f}")
+    print(f"F1-Score: {f1:.4f}")
+    print("Classification Report:")
+    print(classification_report(y_test, y_pred))
+    print("-" * 80)
+
+
+
+
